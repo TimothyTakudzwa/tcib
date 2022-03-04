@@ -41,8 +41,15 @@ INSTALLED_APPS = [
     'transaction.apps.TransactionConfig',
     'rest_framework',
     'rest_framework.authtoken',
-    'dj_rest_auth'
+    'dj_rest_auth',
+    'django.contrib.sites',
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'dj_rest_auth.registration',
 ]
+
+SITE_ID=1
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -81,10 +88,16 @@ REST_FRAMEWORK = {
     # or allow read-only access for unauthenticated users.
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly',
-        'rest_framework.authentication.BasicAuthentication',
-        'rest_framework.authentication.SessionAuthentication',
-    ]
+        
+    ],
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+    
+        'dj_rest_auth.jwt_auth.JWTCookieAuthentication',
+    )
 }
+
+REST_USE_JWT = True
+AUTH_USER_MODEL = 'api.User'
 # Database
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
 
