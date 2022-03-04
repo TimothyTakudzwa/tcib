@@ -8,7 +8,7 @@ router = DefaultRouter()
 router.register(r'transaction', TCIBViewset)
 
 urlpatterns = [
-    path('', include(router.urls)),
+    path('tcib/', include(router.urls)),
     path('auth/', include('dj_rest_auth.urls')),
     path('auth/registration/', include('dj_rest_auth.registration.urls'))
 ]
