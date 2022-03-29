@@ -22,7 +22,9 @@ class TCIBViewset(viewsets.ModelViewSet):
     @action(detail=False, methods=['post'])
     def payment(self, request):
         serializer = PaymentSerializer(data=request.data)
-        if serializer.is_valid():           
+        if serializer.is_valid():
+            transaction = serializer.save()
+            transaction.status = 'PENDING'
             nsmap = {None: "urn:iso:std:iso:20022:tech:xsd:pacs.008.001.05",                
                     "xsi": "http://www.w3.org/2001/XMLSchema-instance"}
             root = ET.Element('Document', nsmap=nsmap)
@@ -134,7 +136,17 @@ class TCIBViewset(viewsets.ModelViewSet):
 
 
             # print(ET.tostring(ftstmnt, pretty_print=True, xml_declaration=True, encoding='UTF-8').decode())
-            return HttpResponse(ET.tostring(root, pretty_print=True, xml_declaration=True, encoding='UTF-8', standalone=True).decode(), content_type='text/xml')
+            payload = HttpResponse(ET.tostring(root, pretty_print=True, xml_declaration=True, encoding='UTF-8', standalone=True).decode(), content_type='text/xml')
+            headers = {
+                'Content-Type': 'text/xml',
+                'X-AUTH-USER-NAME': 'IAS_USER',
+                'X-AUTH-USER-PWD': 'b@nkse$v!23',
+                'X-AUTH-API-VERSION': 'ISO20022v1.0'
+            }
+            url = "https://uat-tcib.bankservafrica.com:23211/eig/payment"
+            response = request.post(url, data=payload, headers=headers)
+            print(response.text)
+            return payload
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -258,10 +270,16 @@ class TCIBViewset(viewsets.ModelViewSet):
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    @action(detail=False, methods=['post'])
-    def status(self, request):
-        serializer = PaymentSerializer(data=request.data)
-        if serializer.is_valid():
-            return Response("{}", status=200)
+    @action(detail=False, methods=['get'])
+    def status(self, request, msg_id=None):
+        if msg_id is None:
+            return Response({"message": "Message ID is required"}, status=status.HTTP_400_BAD_REQUEST)
         else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"message": "Message ID is required"}, status=status.HTTP_400_BAD_REQUEST)
+        transaction = Transaction.objects.get(msg_id=msg_id)
+        if transaction is None:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        else:
+            response = generate_response('100', transaction.status)
+            return Response(response, status=status.HTTP_200_OK)
+

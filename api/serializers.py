@@ -3,6 +3,7 @@ from rest_framework import serializers
 
 from transaction.models import Transaction
 
+
 class CustomerSerializer(serializers.Serializer):
     name = serializers.CharField(required=True, label='currency_code', max_length=255)
     account_number = serializers.CharField(required=True, label='account_number', max_length=255)
@@ -10,12 +11,16 @@ class CustomerSerializer(serializers.Serializer):
     town_name = serializers.CharField(required=True, label='town_name', max_length=255)
     country = serializers.CharField(required=True, label='country', max_length=255)
     postal_code = serializers.CharField(required=True, label='postal_code', max_length=255)
+
+
 class AmountSerializer(serializers.Serializer):
     amount = serializers.FloatField(required=True, label='amount')
     currency_code = serializers.CharField(required=True, label='currency_code', max_length=255)
 
     def create(self, validated_data):
         return AmountSerializer(**validated_data)
+
+
 class PaymentSerializer(serializers.Serializer):
     amount = AmountSerializer(required=True, label='amount')
     sender = CustomerSerializer(required=True, label='sender')
@@ -31,3 +36,12 @@ class PaymentSerializer(serializers.Serializer):
                   'receiver_account_number', 'spid', 'participant_id', 'receiving_agent_participant_id']
 
 
+class TransactionStatusSerializer(serializers.Serializer):
+    transaction_reference = serializers.CharField(required=True)
+
+    def validate_transaction_reference(self, value):
+        try:
+            Transaction.objects.get(reference=value)
+        except Transaction.DoesNotExist:
+            raise serializers.ValidationError("Transaction reference does not exist")
+        return value
